@@ -1,0 +1,10 @@
+-name: create ansible user
+  user:
+    name: ansible
+    system: yes
+
+-name: copy sudoers_ansible
+  copy:
+   src:
+   dst:
+

@@ -1,0 +1,25 @@
+
+
+Host *
+  User tem
+  IdentityFile ~/.ssh/sshkeys/self/id_rsa
+  StrictHostKeyChecking no
+Host *
+  User ansible
+  IdentityFile ~/.ssh/sshkeys/ansible/id_rsa
+  StrictHostKeyChecking no
+Host *
+  User git
+  IdentityFile ~/.ssh/sshkeys/git/id_rsa
+  StrictHostKeyChecking no
+
+
+Host dellpc
+  HostName dellpc.forwardthinking.local
+  User ansible
+  IdentityFile ~/.ssh/sshkeys/ansible/id_rsa
+
+Host githubvm
+  HostName githubvm.forwardthinking.local
+  user git
+  IdentityFile ~/.ssh/sshkeys/git/id_rsa

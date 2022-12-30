@@ -1,0 +1,30 @@
+$TTL 86400
+@ IN SOA dellpc.forwardthinking.local. admin.forwardthinking.local. (
+                                            2020011800 ;Serial
+                                            3600 ;Refresh
+                                            1800 ;Retry
+                                            604800 ;Expire
+                                            86400 ;Minimum TTL
+)
+;Name Server Information
+@ IN NS dellpc.forwardthinking.local.
+dellpc     IN      A       192.168.1.127
+
+;Reverse lookup for Name Server
+127 IN PTR dellpc.forwardthinking.local.
+
+;PTR Record IP address to Hostname
+227     IN      PTR     temslaptop.forwardthinking.local
+212     IN      PTR     laptop2.forwardthinking.local
+72      IN      PTR     pi-star.forwardthinking.local
+127	IN	PTR 	dellpc.forwardthinking.local
+208	IN	PTR 	ansiblevm1.forwardthinking.local
+74	IN	PTR	githubvm.forwardthinking.local
+75	IN	PTR	tem.forwardthinking.local
+64	IN	PTR	dockervm1.forwardthinking.local
+76	IN	PTR	lampvm1.forwardthinking.local
+70      IN      PTR     hpilo4.forwardthinking.local
+71      IN      PTR     esxi.forwardthinking.local
+65      IN      PTR     octopi.forwardthinking.local
+
+

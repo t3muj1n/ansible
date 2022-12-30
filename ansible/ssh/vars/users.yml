@@ -1,0 +1,8 @@
+---
+users:
+
+        - username: tem
+          use_sudo: yes
+        - username: ansible
+          use_sudo: yes
+

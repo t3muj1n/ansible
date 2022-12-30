@@ -1,0 +1,119 @@
+---
+  - hosts: "group1"
+    become: yes
+    vars:
+      ansibleuser: 'ansible'
+      ansiblepassword: 'gloria4455!'
+      ansiblehome: '/home/ansible'
+
+    tasks:
+      - name:  yum_upgrade
+        yum: name=* state=latest
+      
+      
+      - name: bootstrap_basic_tools
+        yum:
+          state: present
+          name:
+            - epel-release
+            - ansible 
+            - git 
+            - nmap
+            - curl
+            - sshpass 
+            - htop
+            - tmux
+        when: ansible_os_family == 'RedHat'
+
+      - name: make_sure_sudoers_file_for_ansible_exists
+        copy:
+            content: ""
+            dest: /etc/sudoers.d/ansible
+            force: no
+            group: root
+            owner: root
+            mode: 0644
+
+
+      - name: add_ansible_user_to_sudo
+        lineinfile:
+          path: /etc/sudoers.d/ansible
+          line: "ansible ALL=(ALL) NOPASSWD: ALL"
+          owner: root
+          group: root
+          mode: 0644
+      
+      - name: add_ansible_group
+        group:
+          name: "{{ansibleuser}}"
+          gid: 1001
+          state: present
+
+      - name: adduser_ansible
+        user:
+          name: "{{ansibleuser}}"
+          update_password: on_create
+          uid: 1001
+          password: "{{ ansiblepassword | password_hash('sha512') }}"
+          append: yes
+          groups:
+           - ansible
+           - wheel
+          shell: /bin/bash
+          system: no
+          state: present
+          createhome: yes
+          home: "{{ansiblehome}}"
+
+      - name: move_template_ansible_ssh
+        copy:
+          src: ../templates/ansibleservice/ansiblessh/
+          dest: "{{ansiblehome}}/.ssh"
+          owner: "{{ansibleuser}}"
+          group: "{{ansibleuser}}"
+          mode: 0644
+          force: no
+        register: result
+      - name: move_template_ansible_ssh_sshkeys
+        copy:
+          src: ../templates/ansibleservice/ansiblessh/sshkeys
+          dest: "{{ansiblehome}}/.ssh/"
+          owner: "{{ansibleuser}}"
+          group: "{{ansibleuser}}"
+          mode: 0644
+          force: no
+      - name: move_template_ansible_ssh_config
+        copy:
+          src: ../templates/ansibleservice/ansiblessh/config
+          dest: "{{ansiblehome}}/.ssh/config"
+          owner: "{{ansibleuser}}"
+          group: "{{ansibleuser}}"
+          mode: 0600
+          force: no 
+      - name: move_template_ansible_ssh_authorized_keys
+        copy:
+          src: ../templates/ansibleservice/ansiblessh/authorized_keys
+          dest: "{{ansiblehome}}/.ssh/authorized_keys"
+          owner: "{{ansibleuser}}"
+          group: "{{ansibleuser}}"
+          mode: 0600 
+          force: no    
+      - name: copy_sshkeyfiles_to_sshkeypass
+        copy:
+          src: ../templates/ansibleservice/ansiblessh/sshkeys/
+          dest: "{{ansiblehome}}/.ssh/sshkeys/"
+          owner: "{{ansibleuser}}"
+          group: "{{ansibleuser}}"
+          mode: 0644
+          force: no
+
+
+      - name: change_mode_on_ssh_keypass_keys_for_ansible_user
+        shell: chmod 0600 {{ansiblehome}}/.ssh/sshkeys/*/id_rsa 2>&1 > /dev/null ; echo $?
+        changed_when: False
+        when: result.changed == true
+
+
+#ansible-playbook ./playbooks/bootstrap_ansible.yml  --user tem --ask-pass --ask-become-pass -i ./inventory/hosts
+#ansible-playbook ./playbooks/bootstrap_ansible.yml  --user tem --ask-become-pass -i ./inventory/hosts
+#ansible-playbook -vvvv ./playbooks/bootstrap_git.yml  --user ansible -i ./inventory/hosts

@@ -1,0 +1,58 @@
+---
+  - hosts: "dhcpserver"
+    become: yes
+    vars:
+      dhcpdhome: '/etc/dhcp'
+    tasks:
+      - name:  yum_upgrade
+        yum: name=* state=latest
+        
+      - name: install the dhcpd server
+        yum:
+          state: present
+          name: 
+            - dhcp-server
+            - dhcp-client
+            - network-scripts
+            - NetworkManager
+  
+
+
+            
+      - name: copy_dhcpd.conf_to_dhcp_server
+        copy:
+          src: ../files/dhcpdservice/dhcpd.conf
+          dest: "{{dhcpdhome}}/dhcpd.conf"
+          owner: root
+          group: root
+          mode: 0644 
+          force: yes
+        register: filechanged
+
+      - name: restart_dhcpd
+        ansible.builtin.systemd:
+          state: restarted
+          daemon_reload: yes
+          name: dhcpd
+        when: filechanged.changed
+
+      - name: move_ifcfg-enp4s0_to_sysconfig_network-scripts
+        copy:
+          src: ../files/dhcpdservice/ifcfg-enp4s0
+          dest: /etc/sysconfig/network-scripts/ifcfg-enp4s0
+          owner: root
+          group: root
+          mode: 0644
+          force: yes
+        register: ifcfgchanged
+
+      - name: restart_network_manager
+        ansible.builtin.systemd:
+          enabled: yes
+          state: started
+          daemon_reload: yes
+          name: NetworkManager
+        when: ifcfgchanged.changed
+
+
+#ansible-playbook --verbose ./playbooks/bootstrap_dhcpd.yml  --user ansible -i ./inventory/hosts

@@ -1,0 +1,8 @@
+---
+  - hosts: laptops
+    become: true
+    tasks:
+      - name: install_tmux
+        yum:
+          state: present
+          name: tmux

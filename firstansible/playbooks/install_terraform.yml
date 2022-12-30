@@ -1,0 +1,19 @@
+---
+  - hosts: install_terraform
+    become: true
+    tasks:
+    - name: install_unzip
+      yum:
+        state: present
+        name: unzip
+
+    - name: install_terraform
+      unarchive: yes
+        src: https://releases.hashicorp.com/
+        remote_src:
+        dest:/usr/local/bin
+        user: root
+        group: root
+        mode: 0755
+
+

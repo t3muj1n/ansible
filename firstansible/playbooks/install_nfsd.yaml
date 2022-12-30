@@ -1,0 +1,50 @@
+---
+  - hosts: nfsserver
+    become: true
+    vars:
+      mountpoint: "3tb_external.exports"
+    tasks:
+
+      - name: install_nfsclient_and_nfsd
+        yum:
+          state: present
+          name: nfs-utils
+
+      - name: enable_nfsd_service
+        ansible.builtin.systemd:
+          enabled: yes
+          name: nfs-server
+
+      - name: make_sure_nfs_exports_exist
+        copy:
+            content: ""
+            dest: "/etc/exports.d/{{mountpoint}}"
+            force: no
+            group: root
+            owner: root
+            mode: 0644
+
+
+      - name: add_3tb_external_to_exports_file
+        lineinfile:
+          path: "/etc/exports.d/{{mountpoint}}"
+          line: "/mnt/3tb_external  192.168.1.0/24(rw,async,no_root_squash)"
+          owner: root
+          group: root
+          mode: 0644
+        register: exportsfile
+   
+      - name: enable_nfsd_service
+        ansible.builtin.systemd:
+          state: restarted
+          daemon_reload: yes
+          name: nfs-server
+        when: exportsfile.changed == True  
+
+      - name: enable_nfsd_service
+        ansible.builtin.systemd:
+          state: restarted
+          daemon_reload: yes
+          name: nfs-mountd
+        when: exportsfile.changed == True 
+

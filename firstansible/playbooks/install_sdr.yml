@@ -1,0 +1,22 @@
+---
+  - hosts: "sdrdongle"
+    become: yes
+    vars:
+    tasks:
+    - name: Add Osmocom_repository_for_RTLSDR_firmware
+      yum_repository:
+        name: 
+          "osmocom-latest"
+        description: Latest tagged versions of Osmocom celluliar network elements for Centos
+        baseurl: https://downloads.osmocom.org/packages/osmocom:/latest/CentOS_8/
+        enabled: yes
+        gpgcheck: no
+    - name: Add uhd_firmware_required_for_rlt_sdr
+      yum:
+        name: 
+          - uhd-firmware.noarch
+          - gqrx
+          - rtl-sdr.x86_64
+          - rtl-sdr-devel.x86_64
+        state: present
+

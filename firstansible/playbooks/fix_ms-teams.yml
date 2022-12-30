@@ -1,0 +1,34 @@
+---
+  - hosts: "laptops"
+    become: yes
+    tasks:
+    - name: fix_wayland_line_in_custom.conf
+      ansible.builtin.lineinfile:
+        state: present
+        path: /etc/gdm/custom.conf
+        regexp: '^#WaylandEnable=false'
+        line: 'WaylandEnable=false'
+        owner: root
+        group: root
+        mode: '0644'
+      register: filechanged
+
+    - name: add_Xorg_line_into_custom.conf_file
+      ansible.builtin.lineinfile:
+        state: present
+        path: /etc/gdm/custom.conf
+        regexp: '^#WaylandEnable=false'
+        insertafter: '^WaylandEnable=false'
+        line: 'DefaultSession=gnome-xorg.desktop'
+        owner: root
+        group: root
+        mode: '0644'
+      register: filechanged
+
+    - name: restart_gdm_service 
+      ansible.builtin.systemd:
+        state: restarted
+        daemon_reload: yes
+        name: gdm
+      when: filechanged.changed
+    

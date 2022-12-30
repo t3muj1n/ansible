@@ -1,0 +1,76 @@
+---
+  - hosts: "namedserver"
+    become: yes
+    vars:
+      namedhome: '/etc/named'
+      zonehome: '/var/named'
+      nameduser: 'named'
+
+    tasks:
+      - name:  yum_upgrade
+        yum: name=* state=latest
+        
+      - name: install_the_bind_server
+        yum:
+          state: present
+          name: bind
+  
+      - name: enable_named_service
+        ansible.builtin.systemd:
+          enabled: yes
+          name: named
+            
+      - name: copy_named.conf_to_named_server
+        copy:
+          src: ../files/namedservice/named.conf
+          dest: "{{namedhome}}/named.conf"
+          owner: "{{nameduser}}"
+          group: "{{nameduser}}"
+          mode: 0644 
+          force: yes
+        register: namedconf
+      - name: copy_forwardthinking.local.db_to_var_named
+        copy:
+          src: ../files/namedservice/forwardthinking.local.db
+          dest: "{{zonehome}}/"
+          owner: "{{nameduser}}"
+          group: "{{nameduser}}"
+          mode: 0644
+          force: yes
+        register: zonefile
+ 
+      - name: copy_forwardthinking.local.rev_to_var_named
+        copy:
+          src: ../files/namedservice/forwardthinking.local.rev
+          dest: "{{zonehome}}/"
+          owner: "{{nameduser}}"
+          group: "{{nameduser}}"
+          mode: 0644
+          force: yes
+        register: revzonefile 
+ 
+      - name: copy_resolv.conf_to_named_etc_directory
+        copy:
+          src: ../files/namedservice/resolv.conf
+          dest: /etc/
+          owner: root
+          group: root
+          mode: 0644
+          force: yes
+        register: resolvconf
+
+      - name: restart_named
+        ansible.builtin.systemd:
+          state: restarted
+          daemon_reload: yes
+          name: named
+        when: (namedconf.changed == "True") or 
+              (revzonefile.changed == "True") or 
+              (zonefile.changed == "True") or 
+              (resolvconf.changed == "True")
+      
+      - name: debug
+        debug:
+          var: namedconf.changed, revzonefile.changed, zonefile.changed, resolvconf.changed
+          
+

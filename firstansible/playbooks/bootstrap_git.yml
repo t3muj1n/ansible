@@ -1,0 +1,106 @@
+---
+  - hosts: "gitserver"
+    become: yes
+    vars:
+      gituser: 'git'
+      gitpassword: 'gloria4455!'
+      githome: '/home/git'
+
+    tasks:
+      - name: make_sure_git-core_is_installed
+        yum:
+          state: present
+          name:
+            - git-core 
+            - git 
+
+      - name: add_git_group
+        group:
+          name: git
+          gid: 1002
+          state: present
+
+      - name: adduser_git_with_git_shell
+        user:
+          name: "{{gituser}}"
+          update_password: on_create
+          uid: 1002
+          password: "{{ gitpassword | password_hash('sha512') }}"
+          append: yes
+          groups:
+           - git
+           - wheel
+          shell: /usr/bin/git-shell
+          system: no
+          state: present
+          createhome: yes
+          home: "{{githome}}"
+
+      - name: create_git-shell-commands_directory_for_user_git
+        file:
+          path: "{{githome}}/git-shell-commands"
+          state: directory
+          owner: "{{gituser}}"
+          group: "{{gituser}}"
+          force: no
+          mode: 0755  
+
+      - name: create_symlink_for_git_in_git-shell-commands
+        file:
+          src: /usr/bin/git
+          dest: "{{githome}}/git-shell-commands/git"
+          state: link
+          mode: 0777
+          force: no
+
+      - name: make_dir_for_git_ssh
+        copy:
+          src: ../files/gitservice/gitssh/
+          dest: "{{githome}}/.ssh"
+          owner: "{{gituser}}"
+          group: "{{gituser}}"
+          mode: 0644
+          force: no
+        register: result
+        
+      - name: make_sshkeys_dir_for_git
+        copy:
+          src: ../files/gitservice/gitssh/sshkeys
+          dest: "{{githome}}/.ssh/"
+          owner: "{{gituser}}"
+          group: "{{gituser}}"
+          mode: 0644
+          force: no
+      - name: copy_authorized_keys_for_git
+        copy:
+          src: ../files/gitservice/gitssh/authorized_keys
+          dest: "{{githome}}/.ssh/authorized_keys"
+          owner: "{{gituser}}"
+          group: "{{gituser}}"
+          mode: 0600 
+          force: no  
+      - name: copy_ssh_config_for_git
+        copy:
+          src: ../files/gitservice/gitssh/config
+          dest: "{{githome}}/.ssh/config"
+          owner: "{{gituser}}"
+          group: "{{gituser}}"
+          mode: 0600
+          force: no  
+      - name: copy_sshkeyfiles_to_sshkeypass_for_git
+        copy:
+          src: ../files/gitservice/gitssh/sshkeys/
+          dest: "{{githome}}/.ssh/sshkeys/"
+          owner: "{{gituser}}"
+          group: "{{gituser}}"
+          mode: 0644
+          force: no
+      - name: change_mode_on_ssh_keypass_keys_for_ansible_user
+        shell: chmod  0600 {{githome}}/.ssh/sshkeys/*/id_rsa 2>&1 > /dev/null ; echo $?
+        register: nop
+        changed_when: nop.rc != 0
+        when: result.changed == true
+      
+      #- name: debug
+      #  debug:
+      #    var: result.changed

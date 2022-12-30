@@ -1,0 +1,58 @@
+---
+- name: update linux servers
+  hosts: linux
+  remote_user: tem
+  become_method: sudo
+  become_user: root
+
+
+- name: Upgrade all packages
+  ansible.builtin.yum:
+    name: '*'
+    state: latest
+
+
+
+- name: Install a list of packages with a list variable
+  ansible.builtin.yum:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+    - nmap
+    - curl
+    - git
+    - wget
+    - ansible
+    - 
+
+- name: add ansible user and set groups
+  user:
+    name: ansible
+    # On RedHat systems, we put the ansible user in the wheel group to
+    # work-around cPanel's open file limit of 100.  Mitogen uses file
+    # descriptors 100 and 101 for internal purposes.  See:
+    # https://github.com/dw/mitogen/issues/644
+    groups:
+      "{{ 'wheel' if ansible_facts['os_family'] == 'RedHat' else '' }}"
+    home: "/home/ansible"
+
+- name: allow ansible user to have passwordless sudo
+  lineinfile:
+    path: /etc/sudoers.d/ansible
+    line: "ansible ALL=(ALL) NOPASSWD: ALL"
+    # Older systems require this to be 0440 or sudo breaks.
+    mode: 0440
+    create: yes
+    validate: /usr/sbin/visudo -cf %s
+
+- name: create ansible's authorized_keys
+  become: yes
+  become_user: ansible 
+  authorized_key:
+    user: ansible
+    path: "/home/ansible/.ssh/authorized_keys"
+    key: |
+      {{ lookup('file', 'ansible.rsa.key.pub') }}
+    exclusive: yes
+
