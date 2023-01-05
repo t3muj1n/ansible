@@ -3,7 +3,7 @@
     become: yes
     vars:
       gituser: 'git'
-      gitpassword: 'gloria4455!'
+      gitpassword: '********!'
       githome: '/home/git'
 
     tasks:
